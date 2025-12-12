@@ -3,10 +3,11 @@ package com.armleague.backend.model
 import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.*
 import java.math.BigDecimal
+import java.util.Objects
 
 @Entity
 @Table(name = "weight_classes")
-data class WeightClass(
+class WeightClass(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "class_id")
@@ -31,4 +32,15 @@ data class WeightClass(
 
     @Column(name = "entry_fee")
     var entryFee: BigDecimal = BigDecimal.ZERO
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as WeightClass
+        return id != null && id == other.id
+    }
+
+    override fun hashCode(): Int {
+        return Objects.hash(id)
+    }
+}

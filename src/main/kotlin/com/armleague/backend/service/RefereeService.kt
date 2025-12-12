@@ -36,7 +36,7 @@ class RefereeService(
             fullName = dto.fullName,
             role = UserRole.REFEREE
         )
-        val savedUser = userRepository.save(newUser)
+        val savedUser = userRepository.saveAndFlush(newUser)
 
         val newReferee = Referee(
             user = savedUser,
@@ -65,7 +65,10 @@ class RefereeService(
 
     @Transactional
     fun deleteReferee(id: Int) {
-        val referee = getRefereeById(id)
-        userRepository.deleteById(referee.user.id!!)
+        val referee = refereeRepository.findById(id).orElse(null)
+        if (referee != null) {
+            refereeRepository.delete(referee)
+            userRepository.delete(referee.user)
+        }
     }
 }
