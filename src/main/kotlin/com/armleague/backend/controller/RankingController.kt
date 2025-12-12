@@ -27,4 +27,10 @@ class RankingController(
     fun getByAthlete(@PathVariable athleteId: Int): List<Ranking> {
         return service.getRankingsByAthlete(athleteId)
     }
+
+    @GetMapping("/raw-check")
+    @Operation(summary = "Получить первые 20 записей из таблицы рейтингов")
+    fun rawCheck(): List<Ranking> {
+        return service.getAllRankings().take(20)
+    }
 }

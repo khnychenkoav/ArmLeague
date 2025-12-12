@@ -11,11 +11,14 @@ interface AthleteRepository : JpaRepository<Athlete, Int> {
 
     @Query(
         value = """
-            SELECT a.nickname, a.country_code, COUNT(m.match_id) as wins
-            FROM athletes a
-            JOIN matches m ON m.winner_id = a.athlete_id
-            GROUP BY a.athlete_id, a.nickname, a.country_code
-            ORDER BY wins DESC
+            SELECT 
+                a.nickname, 
+                a.country_code, 
+                r.wins
+            FROM rankings r
+            JOIN athletes a ON r.athlete_id = a.athlete_id
+            WHERE r.wins > 0
+            ORDER BY r.wins DESC, r.points DESC
             LIMIT 10
         """,
         nativeQuery = true

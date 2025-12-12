@@ -4,11 +4,14 @@ import com.armleague.backend.dto.CreateRegistrationDto
 import com.armleague.backend.dto.CreateWeightClassDto
 import com.armleague.backend.dto.UpdateRegistrationDto
 import com.armleague.backend.dto.UpdateWeightClassDto
+import com.armleague.backend.dto.WeighInDto
+import com.armleague.backend.model.RegistrationStatus
 import com.armleague.backend.model.TournamentRegistration
 import com.armleague.backend.model.WeightClass
 import com.armleague.backend.repository.*
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
 
 @Service
 class RegistrationService(
@@ -121,5 +124,61 @@ class RegistrationService(
         } else {
             throw RuntimeException("Weight class not found")
         }
+    }
+
+    @Transactional
+    fun batchCreateWeightClasses(
+        tournamentId: Int,
+        dtos: List<CreateWeightClassDto>,
+        dryRun: Boolean
+    ): Map<String, Any> {
+        val tournament = tournamentRepository.findById(tournamentId)
+            .orElseThrow { RuntimeException("Tournament not found") }
+
+        var successCount = 0
+        val errors = mutableListOf<String>()
+
+        dtos.forEachIndexed { index, dto ->
+            try {
+                if (dto.className.isBlank()) throw IllegalArgumentException("Class name is blank")
+                if (dto.maxWeightKg <= BigDecimal.ZERO) throw IllegalArgumentException("Max weight must be positive")
+
+                if (!dryRun) {
+                    val weightClass = WeightClass(
+                        tournament = tournament,
+                        className = dto.className,
+                        maxWeightKg = dto.maxWeightKg,
+                        gender = dto.gender,
+                        hand = dto.hand,
+                        entryFee = dto.entryFee
+                    )
+                    weightClassRepository.save(weightClass)
+                }
+                successCount++
+            } catch (e: Exception) {
+                errors.add("Error at index $index: ${e.message}")
+            }
+        }
+        return mapOf("total" to dtos.size, "processed" to successCount, "errors" to errors, "dryRun" to dryRun)
+    }
+
+    @Transactional
+    fun performWeighIn(registrationId: Int, dto: WeighInDto): TournamentRegistration {
+        val registration = getRegistrationById(registrationId)
+        val athlete = registration.athlete
+
+        if (dto.weight > registration.weightClass!!.maxWeightKg) {
+            registration.status = RegistrationStatus.DISQUALIFIED
+            throw RuntimeException("Athlete weight (${dto.weight}) exceeds class limit (${registration.weightClass!!.maxWeightKg})")
+        }
+
+        registration.weighInWeight = dto.weight
+        registration.status = RegistrationStatus.APPROVED
+        registration.isPaid = true
+
+        athlete.weightKg = dto.weight
+        athleteRepository.save(athlete)
+
+        return registrationRepository.save(registration)
     }
 }

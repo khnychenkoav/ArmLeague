@@ -1,5 +1,6 @@
 package com.armleague.backend.service
 
+import com.armleague.backend.dto.AthleteProfileDto
 import com.armleague.backend.dto.RegisterAthleteDto
 import com.armleague.backend.dto.UpdateAthleteDto
 import com.armleague.backend.model.Athlete
@@ -98,5 +99,17 @@ class AthleteService(
         athleteRepository.delete(athlete)
 
         userRepository.deleteById(athlete.user.id!!)
+    }
+
+    fun getAthleteProfile(id: Int): AthleteProfileDto {
+        val athlete = getAthleteById(id)
+        val rankings = rankingRepository.findByAthleteId(id)
+        val matches = matchRepository.findByAthleteA_IdOrAthleteB_Id(id, id)
+
+        return AthleteProfileDto(
+            athlete = athlete,
+            rankings = rankings,
+            matchHistory = matches
+        )
     }
 }

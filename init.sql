@@ -304,3 +304,63 @@ CREATE TRIGGER trg_update_stats
 AFTER UPDATE ON matches
 FOR EACH ROW
 EXECUTE FUNCTION update_rankings_after_match();
+
+CREATE OR REPLACE FUNCTION update_or_create_ranking(
+    p_athlete_id INT,
+    p_hand hand_type,
+    p_is_win BOOLEAN
+) RETURNS VOID AS $$
+DECLARE
+    points_change INT;
+BEGIN
+    IF p_is_win THEN
+        points_change := 10;
+    ELSE
+        points_change := -10;
+    END IF;
+
+    INSERT INTO rankings (athlete_id, hand, wins, losses, points, last_updated)
+    VALUES (p_athlete_id, p_hand,
+            CASE WHEN p_is_win THEN 1 ELSE 0 END,
+            CASE WHEN p_is_win THEN 0 ELSE 1 END,
+            1000 + points_change, NOW())
+    ON CONFLICT (athlete_id, hand)
+    DO UPDATE SET
+        wins = rankings.wins + (CASE WHEN p_is_win THEN 1 ELSE 0 END),
+        losses = rankings.losses + (CASE WHEN p_is_win THEN 0 ELSE 1 END),
+        points = rankings.points + points_change,
+        last_updated = NOW();
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION update_rankings_trigger_func()
+RETURNS TRIGGER AS $$
+DECLARE
+    hand_val hand_type;
+    loser_id INT;
+BEGIN
+    IF (OLD.winner_id IS NULL AND NEW.winner_id IS NOT NULL) THEN
+
+        SELECT hand INTO hand_val FROM weight_classes WHERE class_id = NEW.class_id;
+
+        IF (NEW.winner_id = NEW.athlete_a_id) THEN
+            loser_id := NEW.athlete_b_id;
+        ELSE
+            loser_id := NEW.athlete_a_id;
+        END IF;
+
+        PERFORM update_or_create_ranking(NEW.winner_id, hand_val, TRUE);
+
+        PERFORM update_or_create_ranking(loser_id, hand_val, FALSE);
+
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_update_stats ON matches;
+CREATE TRIGGER trg_update_stats
+AFTER UPDATE ON matches
+FOR EACH ROW
+EXECUTE FUNCTION update_rankings_trigger_func();

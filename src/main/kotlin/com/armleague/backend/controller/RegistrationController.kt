@@ -4,6 +4,7 @@ import com.armleague.backend.dto.CreateRegistrationDto
 import com.armleague.backend.dto.CreateWeightClassDto
 import com.armleague.backend.dto.UpdateRegistrationDto
 import com.armleague.backend.dto.UpdateWeightClassDto
+import com.armleague.backend.dto.WeighInDto
 import com.armleague.backend.model.TournamentRegistration
 import com.armleague.backend.model.WeightClass
 import com.armleague.backend.service.RegistrationService
@@ -86,5 +87,14 @@ class RegistrationController(
     @Operation(summary = "Удалить категорию (Внимание: удалит и все заявки в ней!)")
     fun deleteClass(@PathVariable id: Int) {
         service.deleteWeightClass(id)
+    }
+
+    @PostMapping("/registrations/{id}/weigh-in")
+    @Operation(summary = "Провести взвешивание (Транзакция: обновляет и заявку, и профиль атлета)")
+    fun weighIn(
+        @PathVariable id: Int,
+        @RequestBody dto: WeighInDto
+    ): TournamentRegistration {
+        return service.performWeighIn(id, dto)
     }
 }

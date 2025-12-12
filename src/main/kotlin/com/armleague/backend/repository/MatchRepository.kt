@@ -14,4 +14,6 @@ interface MatchRepository : JpaRepository<Match, Int> {
     fun findByAthleteA(athlete: Athlete): List<Match>
 
     fun findByAthleteB(athlete: Athlete): List<Match>
+
+    fun findByAthleteA_IdOrAthleteB_Id(id1: Int, id2: Int): List<Match>
 }

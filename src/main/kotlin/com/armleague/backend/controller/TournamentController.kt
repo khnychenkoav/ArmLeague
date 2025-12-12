@@ -1,5 +1,6 @@
 package com.armleague.backend.controller
 
+import com.armleague.backend.dto.TournamentGridDto
 import com.armleague.backend.dto.UpdateTournamentDto
 import com.armleague.backend.model.Tournament
 import com.armleague.backend.service.TournamentService
@@ -45,5 +46,11 @@ class TournamentController(
     @Operation(summary = "Удалить турнир")
     fun delete(@PathVariable id: Int) {
         service.deleteTournament(id)
+    }
+
+    @GetMapping("/{id}/grid")
+    @Operation(summary = "Получить полную турнирную сетку (все матчи, сгруппированные по категориям)")
+    fun getGrid(@PathVariable id: Int): TournamentGridDto {
+        return service.getTournamentGrid(id)
     }
 }

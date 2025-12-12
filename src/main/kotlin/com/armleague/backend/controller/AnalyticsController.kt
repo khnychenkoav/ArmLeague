@@ -36,8 +36,8 @@ class AnalyticsController(
 
         return rawResults.map { row ->
             TopAthleteReportDto(
-                nickname = row[0] as String,
-                country = row[1] as String,
+                nickname = (row[0] as? String) ?: "N/A",
+                country = (row[1] as? String) ?: "N/A",
                 wins = (row[2] as Number).toInt()
             )
         }

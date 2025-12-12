@@ -1,5 +1,6 @@
 package com.armleague.backend.controller
 
+import com.armleague.backend.dto.AthleteProfileDto
 import com.armleague.backend.dto.RegisterAthleteDto
 import com.armleague.backend.dto.UpdateAthleteDto
 import com.armleague.backend.model.Athlete
@@ -46,5 +47,11 @@ class AthleteController(
     @Operation(summary = "Удалить атлета (удаляет и связанный User аккаунт)")
     fun delete(@PathVariable id: Int) {
         service.deleteAthlete(id)
+    }
+
+    @GetMapping("/{id}/profile")
+    @Operation(summary = "Получить полный профиль атлета (инфо, рейтинги, история матчей)")
+    fun getProfile(@PathVariable id: Int): AthleteProfileDto {
+        return service.getAthleteProfile(id)
     }
 }
